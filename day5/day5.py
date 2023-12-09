@@ -54,18 +54,14 @@ def get_map(map_data):
         return key
     return map_func
 
-def remove_overalapping_ranges(seed_ranges):
-    seed_ranges.sort(key=lambda tup: tup[0])
-    new_ranges = []
-    current_min = seed_ranges[0][0]
-
-    for i in range(len(seed_ranges)-1):
-        if seed_ranges[i][1]<seed_ranges[i+1][0]:
-            new_ranges.append((current_min,seed_ranges[i][1]))
-            current_min=seed_ranges[i+1][0]
-
-    return new_ranges
-
+def get_reverse_map(map_data):
+    def map_func(key):
+        for line in map_data:
+            s_start, d_start, length = line
+            if key in range(s_start,s_start+length):
+                return d_start+(key-s_start)
+        return key
+    return map_func
 
 def part1(data):
     (seeds,
@@ -100,7 +96,44 @@ def part1(data):
     return min(locations)
 
 def part2(data):
-    pass
+    (seeds,
+     seed_to_soil,
+     soil_to_fertilizer,
+     fertilizer_to_water,
+     water_to_light,
+     light_to_temperature,
+     temperature_to_humidity,
+     humidity_to_location) = get_seed_data(data)
+
+    soil_to_seed_map = get_reverse_map(seed_to_soil)
+    fertilizer_to_soil_map = get_reverse_map(soil_to_fertilizer)
+    water_to_fertilizer_map = get_reverse_map(fertilizer_to_water)
+    light_to_water_map = get_reverse_map(water_to_light)
+    temperature_to_light_map = get_reverse_map(light_to_temperature)
+    humidity_to_temperature_map = get_reverse_map(temperature_to_humidity)
+    location_to_humifity_map = get_reverse_map(humidity_to_location)
+
+    seed_ranges = [(seeds[2*i],seeds[2*i]+seeds[2*i+1]) for i in range(len(seeds)//2)]
+    print(seed_ranges)
+    loc = 0
+    while(True):
+        valid = False
+        humidity = location_to_humifity_map(loc)
+        temperature = humidity_to_temperature_map(humidity)
+        light = temperature_to_light_map(temperature)
+        water = light_to_water_map(light)
+        fertilizer = water_to_fertilizer_map(water)
+        soil = fertilizer_to_soil_map(fertilizer)
+        seed = soil_to_seed_map(soil)
+        for seed_range in seed_ranges:
+            if seed in range(seed_range[0],seed_range[1]):
+                valid=True
+        if valid:
+            break
+        loc+= 1
+    return loc
+
+
 
 if __name__=='__main__':
     data_dict =get_data(5)
